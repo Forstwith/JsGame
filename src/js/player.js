@@ -8,7 +8,10 @@ function player(initX , initY , canvas) {
         width : 100,
         height : 80,
         x : initX,
-        y : initY
+        y : initY,
+        lives : 0,
+        score : 0,
+        hitStrength : 0
     };
 
     //飞机移动  w 向上 s 向下  a 向左  d 向右
@@ -70,6 +73,23 @@ function player(initX , initY , canvas) {
             }
         }
     };
+
+    o.beHit = function (hitStrength) {
+        if(o.lives > hitStrength) {
+            o.lives -= hitStrength;
+        } else {
+            o.kill();
+        }
+    };
+
+    o.kill = function () {
+        o.lives = 0;
+    };
+
+    o.scored = function (score) {
+        o.score += score;
+    };
+
 
     return o;
 }

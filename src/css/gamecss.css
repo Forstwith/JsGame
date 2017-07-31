@@ -5,3 +5,9 @@ canvas {
     border:1px solid;
 }
 
+p {
+    position: absolute;
+    left : 280px;
+    top : 10px;
+    color: cornsilk;
+}

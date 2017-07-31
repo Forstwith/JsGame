@@ -6,9 +6,12 @@
     <link href="css/gamecss.css" type="text/css" rel="stylesheet">
     <script src="js/player.js"></script>
     <script src="js/bullet.js"></script>
+    <script src="js/enemies.js"></script>
+    <script src="js/cloud.js"></script>
     <script src="js/imgFactory.js"></script>
 <body>
     <canvas width="500px" height="650px" ></canvas>
+    <p>分数 ：0</p>
 
     <script>
 
@@ -23,7 +26,6 @@
 
         //key press register
         window.addEventListener('keydown', function (e) {
-            log(e);
             var k = e.key;
             if (k == 'w') {
                 up = true
@@ -36,7 +38,6 @@
             }
         });
         window.addEventListener('keyup', function (e) {
-            log(e);
             var k = e.key;
             if (k == 'w') {
                 up = false
@@ -49,9 +50,17 @@
             }
         });
 
-
         var canvas = document.querySelector('canvas');
         var context = canvas.getContext('2d');
+        var score = document.querySelector('p');
+        //击中
+        var collide = function (o , e) {
+            var ox = o.x + o.width;
+            var oy = o.y + o.height;
+            var ex = e.x + e.width;
+            var ey = e.y + e.height;
+            return Math.min(ox , ex) >= Math.max(o.x , e.x) && Math.min(oy , ey) >= Math.max(o.y , e.y);
+        };
 
         //加载背景图片
         var bg = getImg('image/background.jpg');
@@ -65,18 +74,34 @@
             context.drawImage(_player.image, _player.x, _player.y, _player.width, _player.height);
         };
 
+        //加载敌方飞机
+        var normalEnemies = [];
+        var newEnemies = function (amount) {
+            setInterval(function () {
+                for (var i = 0 ; i < Math.ceil(Math.random() * amount) ; i ++) {
+                    var enemy = normalnemy(Math.floor(Math.random() * 420) , - Math.floor(Math.random() * 200) , 0 ,
+                        2 , 2 , "image/ep_"+Math.ceil(Math.random()*5)+".png" );
+                    enemy.image.onload = function () {
+                        context.drawImage(enemy.image , enemy.x , enemy.y , enemy.width , enemy.height);
+                    };
 
+                    normalEnemies.push(enemy);
+                }
+            },2000);
+
+
+        };
+        newEnemies(3);
+
+
+        //加载子弹
         var bullets = [];
-
-
         var newBullets = function () {
             setTimeout(function () {
-                //加载子弹
                 var newB = bullet(_player.x + _player.width / 2 - 25, _player.y - 10, canvas);
                 bullets.unshift(newB);
                 
                 newB.image.onload = function () {
-                        log(bullets);
                         context.drawImage(newB.image ,newB.x ,newB.y - 550 , newB.width , newB.height);
                     };
 
@@ -84,10 +109,10 @@
                     bullets.pop();
                 }
                 newBullets();
-
             }, 1000 / 4 );
         };
         newBullets();
+
 
         setInterval(function () {
 
@@ -96,13 +121,33 @@
             context.clearRect(0, 0, canvas.width, canvas.height);
             context.drawImage(bg, 0, 0, canvas.width, canvas.height);
             context.drawImage(_player.image, _player.x, _player.y, _player.width, _player.height);
-            bullets.forEach(function (e, i) {
-                e.move();
-                log(e);
-                context.drawImage(e.image ,e.x ,e.y , e.width , e.height);
+
+            normalEnemies.forEach(function (e , i , arr) {
+                 e.move();
+                bullets.forEach(function (x, i , arr) {
+                    if(collide(e , x)) {
+                        arr.splice(i , 1);
+                        e.beHit(x.hitStrength);
+                    }
+                } );
+
+                 if(e.lives > 0 ) {
+                     if( e.y < 650) {
+                         context.drawImage(e.image , e.x , e.y , e.width , e.height);
+                     } else {
+                         arr.splice(i , 1);
+                     }
+                 } else {
+                      _player.scored(10);
+                      score.innerHTML = '分数 ：'+ _player.score;
+                      arr.splice(i , 1);
+                 }
             } );
 
-
+            bullets.forEach(function (e, i) {
+                e.move();
+                context.drawImage(e.image ,e.x ,e.y , e.width , e.height);
+            } );
         }, 1000 / 60);
         };
 
