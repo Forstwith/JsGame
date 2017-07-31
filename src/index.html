@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WWGAME</title>
+</head>
+    <link href="css/gamecss.css" type="text/css" rel="stylesheet">
+    <script src="js/player.js"></script>
+    <script src="js/bullet.js"></script>
+    <script src="js/imgFactory.js"></script>
+<body>
+    <canvas width="500px" height="650px" ></canvas>
+
+    <script>
+
+    var WWGame = function () {
+        var log = console.log.bind(console);
+
+        //上，下，左，右
+        var up = false;
+        var down = false;
+        var right = false;
+        var left = false;
+
+        //key press register
+        window.addEventListener('keydown', function (e) {
+            log(e);
+            var k = e.key;
+            if (k == 'w') {
+                up = true
+            } else if (k == 's') {
+                down = true;
+            } else if (k == 'a') {
+                left = true;
+            } else if (k == 'd') {
+                right = true;
+            }
+        });
+        window.addEventListener('keyup', function (e) {
+            log(e);
+            var k = e.key;
+            if (k == 'w') {
+                up = false
+            } else if (k == 's') {
+                down = false;
+            } else if (k == 'a') {
+                left = false;
+            } else if (k == 'd') {
+                right = false;
+            }
+        });
+
+
+        var canvas = document.querySelector('canvas');
+        var context = canvas.getContext('2d');
+
+        //加载背景图片
+        var bg = getImg('image/background.jpg');
+        bg.onload = function () {
+            context.drawImage(bg, 0, 0, canvas.width, canvas.height);
+        };
+
+        //加载玩家飞机
+        var _player = player(200, 500, canvas);
+        _player.image.onload = function () {
+            context.drawImage(_player.image, _player.x, _player.y, _player.width, _player.height);
+        };
+
+
+        var bullets = [];
+
+
+        var newBullets = function () {
+            setTimeout(function () {
+                //加载子弹
+                var newB = bullet(_player.x + _player.width / 2 - 25, _player.y - 10, canvas);
+                bullets.unshift(newB);
+                
+                newB.image.onload = function () {
+                        log(bullets);
+                        context.drawImage(newB.image ,newB.x ,newB.y - 550 , newB.width , newB.height);
+                    };
+
+                if(bullets.length > 20){
+                    bullets.pop();
+                }
+                newBullets();
+
+            }, 1000 / 4 );
+        };
+        newBullets();
+
+        setInterval(function () {
+
+            _player.move(up, down, right, left);
+            
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(bg, 0, 0, canvas.width, canvas.height);
+            context.drawImage(_player.image, _player.x, _player.y, _player.width, _player.height);
+            bullets.forEach(function (e, i) {
+                e.move();
+                log(e);
+                context.drawImage(e.image ,e.x ,e.y , e.width , e.height);
+            } );
+
+
+        }, 1000 / 60);
+        };
+
+    //游戏入口
+    (function () {
+         WWGame();
+    })()
+
+
+
+
+
+    </script>
+
+
+</body>
+
+</html>
