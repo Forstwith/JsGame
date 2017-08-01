@@ -14,152 +14,175 @@
     <p>分数 ：0</p>
 
     <script>
+        var WWGame = function () {
+            var log = console.log.bind(console);
 
-    var WWGame = function () {
-        var log = console.log.bind(console);
+            //上，下，左，右
+            var up = false;
+            var down = false;
+            var right = false;
+            var left = false;
+            //暂停
+            var paused = false;
+            var over = false;
 
-        //上，下，左，右
-        var up = false;
-        var down = false;
-        var right = false;
-        var left = false;
+            //key press register
+            window.addEventListener('keydown', function (e) {
+                var k = e.key;
+                if (k == 'w') {
+                    up = true
+                } else if (k == 's') {
+                    down = true;
+                } else if (k == 'a') {
+                    left = true;
+                } else if (k == 'd') {
+                    right = true;
+                } else if (k == 'p') {
+                    paused = !paused;
+                } else if (k == 'o') {
+                   location.reload();
+                }
+            });
+            window.addEventListener('keyup', function (e) {
+                var k = e.key;
+                if (k == 'w') {
+                    up = false
+                } else if (k == 's') {
+                    down = false;
+                } else if (k == 'a') {
+                    left = false;
+                } else if (k == 'd') {
+                    right = false;
+                }
+            });
 
-        //key press register
-        window.addEventListener('keydown', function (e) {
-            var k = e.key;
-            if (k == 'w') {
-                up = true
-            } else if (k == 's') {
-                down = true;
-            } else if (k == 'a') {
-                left = true;
-            } else if (k == 'd') {
-                right = true;
-            }
-        });
-        window.addEventListener('keyup', function (e) {
-            var k = e.key;
-            if (k == 'w') {
-                up = false
-            } else if (k == 's') {
-                down = false;
-            } else if (k == 'a') {
-                left = false;
-            } else if (k == 'd') {
-                right = false;
-            }
-        });
+            var canvas = document.querySelector('canvas');
+            var context = canvas.getContext('2d');
+            var score = document.querySelector('p');
+            //击中
+            var collide = function (o , e) {
+                var ox = o.x + o.width;
+                var oy = o.y + o.height;
+                var ex = e.x + e.width;
+                var ey = e.y + e.height;
+                return Math.min(ox , ex) >= Math.max(o.x , e.x) && Math.min(oy , ey) >= Math.max(o.y , e.y);
+            };
 
-        var canvas = document.querySelector('canvas');
-        var context = canvas.getContext('2d');
-        var score = document.querySelector('p');
-        //击中
-        var collide = function (o , e) {
-            var ox = o.x + o.width;
-            var oy = o.y + o.height;
-            var ex = e.x + e.width;
-            var ey = e.y + e.height;
-            return Math.min(ox , ex) >= Math.max(o.x , e.x) && Math.min(oy , ey) >= Math.max(o.y , e.y);
-        };
+            //加载背景图片
+            var bg = getImg('image/background.jpg');
+            bg.onload = function () {
+                context.drawImage(bg, 0, 0, canvas.width, canvas.height);
+            };
 
-        //加载背景图片
-        var bg = getImg('image/background.jpg');
-        bg.onload = function () {
-            context.drawImage(bg, 0, 0, canvas.width, canvas.height);
-        };
+            //加载玩家飞机
+            var _player = player(200, 500, canvas);
+            _player.image.onload = function () {
+                context.drawImage(_player.image, _player.x, _player.y, _player.width, _player.height);
+            };
 
-        //加载玩家飞机
-        var _player = player(200, 500, canvas);
-        _player.image.onload = function () {
-            context.drawImage(_player.image, _player.x, _player.y, _player.width, _player.height);
-        };
-
-        //加载敌方飞机
-        var normalEnemies = [];
-        var newEnemies = function (amount) {
-            setInterval(function () {
+            //加载敌方飞机
+            var normalEnemies = [];
+            var newEnemies = function (amount) {
                 for (var i = 0 ; i < Math.ceil(Math.random() * amount) ; i ++) {
                     var enemy = normalnemy(Math.floor(Math.random() * 420) , - Math.floor(Math.random() * 200) , 0 ,
                         2 , 2 , "image/ep_"+Math.ceil(Math.random()*5)+".png" );
                     enemy.image.onload = function () {
                         context.drawImage(enemy.image , enemy.x , enemy.y , enemy.width , enemy.height);
                     };
+                    log(normalEnemies);
 
                     normalEnemies.push(enemy);
+                }
+            };
+            setInterval(function () {
+                if (!paused && _player.lives > 0) {
+                    newEnemies(3)
                 }
             },2000);
 
 
-        };
-        newEnemies(3);
+            //加载子弹
+            var bullets = [];
+            var newBullets = function () {
+                setTimeout(function () {
+                    var newB = bullet(_player.x + _player.width / 2 - 25, _player.y - 10, canvas);
+                    bullets.unshift(newB);
+
+                    newB.image.onload = function () {
+                            context.drawImage(newB.image ,newB.x ,newB.y - 550 , newB.width , newB.height);
+                        };
+
+                    if(bullets.length > 20){
+                        bullets.pop();
+                    }
+                    if (!paused && !over) {
+                        newBullets();
+                       }
+                }, 1000 / 4 );
+            };
+            newBullets();
+
+            //加载gameover
+            var gameOver = getImg('image/gameover.jpeg');
+            gameOver.onload = function () {
+                context.drawImage(gameOver , 0 , 0 ,canvas.width , canvas.height);
+            };
 
 
-        //加载子弹
-        var bullets = [];
-        var newBullets = function () {
-            setTimeout(function () {
-                var newB = bullet(_player.x + _player.width / 2 - 25, _player.y - 10, canvas);
-                bullets.unshift(newB);
-                
-                newB.image.onload = function () {
-                        context.drawImage(newB.image ,newB.x ,newB.y - 550 , newB.width , newB.height);
-                    };
-
-                if(bullets.length > 20){
-                    bullets.pop();
+            setInterval(function () {
+                if (!paused && !over) {
+                     freshGame();
                 }
-                newBullets();
-            }, 1000 / 4 );
-        };
-        newBullets();
+            }, 1000 / 60);
 
+            var freshGame = function () {
 
-        setInterval(function () {
+                _player.move(up, down, right, left);
 
-            _player.move(up, down, right, left);
-            
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            context.drawImage(bg, 0, 0, canvas.width, canvas.height);
-            context.drawImage(_player.image, _player.x, _player.y, _player.width, _player.height);
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(bg, 0, 0, canvas.width, canvas.height);
+                normalEnemies.forEach(function (e , i , arr) {
+                    e.move();
+                    bullets.forEach(function (x, i , arr) {
+                        if(collide(e , x)) {
+                            arr.splice(i , 1);
+                            e.beHit(x.hitStrength);
+                        }
+                    } );
 
-            normalEnemies.forEach(function (e , i , arr) {
-                 e.move();
-                bullets.forEach(function (x, i , arr) {
-                    if(collide(e , x)) {
+                    if(e.lives > 0 ) {
+                        if( e.y < 650) {
+                            context.drawImage(e.image , e.x , e.y , e.width , e.height);
+                        } else {
+                            arr.splice(i , 1);
+                        }
+                    } else {
+                        _player.scored(10);
+                        score.innerHTML = '分数 ：'+ _player.score;
                         arr.splice(i , 1);
-                        e.beHit(x.hitStrength);
+                    }
+
+                    if (collide(_player , e)) { //判断飞机是否和其他飞机相撞
+                          _player.beHit(1);
                     }
                 } );
-
-                 if(e.lives > 0 ) {
-                     if( e.y < 650) {
-                         context.drawImage(e.image , e.x , e.y , e.width , e.height);
-                     } else {
-                         arr.splice(i , 1);
-                     }
-                 } else {
-                      _player.scored(10);
-                      score.innerHTML = '分数 ：'+ _player.score;
-                      arr.splice(i , 1);
-                 }
-            } );
-
-            bullets.forEach(function (e, i) {
-                e.move();
-                context.drawImage(e.image ,e.x ,e.y , e.width , e.height);
-            } );
-        }, 1000 / 60);
+                if ( _player.lives > 0) {
+                    bullets.forEach(function (e, i) {
+                        e.move();
+                        context.drawImage(e.image ,e.x ,e.y , e.width , e.height);
+                    } );
+                    context.drawImage(_player.image, _player.x, _player.y, _player.width, _player.height);
+                } else {
+                    context.drawImage(gameOver , 0 , 0 ,canvas.width , canvas.height);
+                    over = true;
+                }
+            };
         };
 
-    //游戏入口
-    (function () {
-         WWGame();
-    })()
-
-
-
-
-
+        //游戏入口
+        (function () {
+            WWGame();
+        })()
     </script>
 
 

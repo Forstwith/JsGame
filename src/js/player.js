@@ -9,7 +9,7 @@ function player(initX , initY , canvas) {
         height : 80,
         x : initX,
         y : initY,
-        lives : 0,
+        lives : 1,
         score : 0,
         hitStrength : 0
     };
